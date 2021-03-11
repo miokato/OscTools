@@ -11,8 +11,9 @@ import SwiftOSC
 class ViewController: UIViewController {
     var client: OSCClient!
     var oscAddress: OSCAddressPattern!
-    @IBOutlet weak var xLabel: UILabel!
-    @IBOutlet weak var yLabel: UILabel!
+
+    @IBOutlet weak var valueLabel: UILabel!
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -36,27 +37,38 @@ class ViewController: UIViewController {
     }
     
     @objc func handlePan(gesture: UIPanGestureRecognizer) {
-        let location = gesture.location(in: view)
-                
-        let normalized = normalReverseY(point: normalize(point: location))
+        guard gesture.numberOfTouches > 0 else { return }
         
-        let converted = normalTo1920x1200(point: normalized)
-        
-        updateView(point: converted)
-        
-        let message = getOscMessage(point: converted)
+        var touches = [CGPoint]()
+        for i in 0..<gesture.numberOfTouches {
+            let location = gesture.location(ofTouch: i, in: view)
+            let normalized = normalReverseY(point: normalize(point: location))
+            let converted = normalTo1920x1200(point: normalized)
+            touches.append(converted)
+        }
+                        
+        updateView(points: touches)
+        let message = getOscMessage(points: touches)
         
         client.send(message)
     }
     
-    func updateView(point: CGPoint) {
-        xLabel.text = String(format: "%.0f", point.x)
-        yLabel.text = String(format: "%.0f", point.y)
+    func updateView(points: [CGPoint]) {
+        var valueStr = ""
+        for (i, point) in points.enumerated() {
+            valueStr += "\(i) x: \(round(point.x)), y: \(round(point.y)), "
+        }
+        valueLabel.text = valueStr
     }
     
-    func getOscMessage(point: CGPoint) -> OSCMessage {
-        
-        return OSCMessage(oscAddress, Int(point.x), Int(point.y), 0)
+    func getOscMessage(points: [CGPoint]) -> OSCMessage {
+        var values = [Int]()
+        for point in points {
+            values.append(Int(point.x))
+            values.append(Int(point.y))
+            values.append(0)
+        }
+        return OSCMessage(oscAddress, values)
     }
     
     func normalTo1920x1200(point: CGPoint) -> CGPoint {
