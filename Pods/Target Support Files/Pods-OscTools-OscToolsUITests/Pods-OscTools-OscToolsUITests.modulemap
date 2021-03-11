@@ -1,0 +1,6 @@
+framework module Pods_OscTools_OscToolsUITests {
+  umbrella header "Pods-OscTools-OscToolsUITests-umbrella.h"
+
+  export *
+  module * { export * }
+}
